@@ -72,7 +72,9 @@ declare type ASTNode = ASTElement | ASTText | ASTExpression;
 declare type ASTElement = {
   type: 1;
   tag: string;
+  //属性对象
   attrsList: Array<{ name: string; value: string }>;
+  //属性对象
   attrsMap: { [key: string]: string | null };
   parent: ASTElement | void;
   children: Array<ASTNode>;

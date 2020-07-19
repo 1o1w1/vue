@@ -1,6 +1,6 @@
 /*!
  * Vue.js v2.5.0
- * (c) 2014-2017 Evan You
+ * (c) 2014-2020 Evan You
  * Released under the MIT License.
  */
 'use strict';
@@ -247,11 +247,6 @@ var no = function (a, b, c) { return false; };
 var identity = function (_) { return _; };
 
 /**
- * Generate a static keys string from compiler modules.
- */
-
-
-/**
  * Check if two values are loosely equal - that is,
  * if they are plain objects, do they have the same shape?
  */
@@ -331,6 +326,8 @@ var LIFECYCLE_HOOKS = [
 ];
 
 /*  */
+
+
 
 var config = ({
   /**
@@ -600,7 +597,6 @@ function logError (err, vm, info) {
 }
 
 /*  */
-/* globals MessageChannel */
 
 // can we use __proto__?
 var hasProto = '__proto__' in {};
@@ -750,7 +746,7 @@ if (typeof Set !== 'undefined' && isNative(Set)) {
   _Set = Set;
 } else {
   // a non-standard Set polyfill that only works with primitive keys.
-  _Set = (function () {
+  _Set = /*@__PURE__*/(function () {
     function Set () {
       this.set = Object.create(null);
     }
@@ -770,15 +766,14 @@ if (typeof Set !== 'undefined' && isNative(Set)) {
 
 /*  */
 
-
-var uid$1 = 0;
+var uid = 0;
 
 /**
  * A dep is an observable that can have multiple
  * directives subscribing to it.
  */
 var Dep = function Dep () {
-  this.id = uid$1++;
+  this.id = uid++;
   this.subs = [];
 };
 
@@ -920,7 +915,12 @@ function cloneVNodes (vnodes, deep) {
  */
 
 var arrayProto = Array.prototype;
-var arrayMethods = Object.create(arrayProto);[
+var arrayMethods = Object.create(arrayProto)
+
+/**
+ * Intercept mutating methods and emit events
+ */
+;[
   'push',
   'pop',
   'shift',
@@ -999,7 +999,7 @@ var Observer = function Observer (value) {
 Observer.prototype.walk = function walk (obj) {
   var keys = Object.keys(obj);
   for (var i = 0; i < keys.length; i++) {
-    defineReactive(obj, keys[i], obj[keys[i]]);
+    defineReactive$$1(obj, keys[i], obj[keys[i]]);
   }
 };
 
@@ -1066,7 +1066,7 @@ function observe (value, asRootData) {
 /**
  * Define a reactive property on an Object.
  */
-function defineReactive (
+function defineReactive$$1 (
   obj,
   key,
   val,
@@ -1149,7 +1149,7 @@ function set (target, key, val) {
     target[key] = val;
     return val
   }
-  defineReactive(ob.value, key, val);
+  defineReactive$$1(ob.value, key, val);
   ob.dep.notify();
   return val
 }
@@ -1603,6 +1603,8 @@ function resolveAsset (
 }
 
 /*  */
+
+
 
 function validateProp (
   key,
@@ -2292,8 +2294,8 @@ function initEvents (vm) {
 
 var target;
 
-function add (event, fn, once) {
-  if (once) {
+function add (event, fn, once$$1) {
+  if (once$$1) {
     target.$once(event, fn);
   } else {
     target.$on(event, fn);
@@ -2316,12 +2318,10 @@ function updateComponentListeners (
 function eventsMixin (Vue) {
   var hookRE = /^hook:/;
   Vue.prototype.$on = function (event, fn) {
-    var this$1 = this;
-
     var vm = this;
     if (Array.isArray(event)) {
       for (var i = 0, l = event.length; i < l; i++) {
-        this$1.$on(event[i], fn);
+        this.$on(event[i], fn);
       }
     } else {
       (vm._events[event] || (vm._events[event] = [])).push(fn);
@@ -2346,8 +2346,6 @@ function eventsMixin (Vue) {
   };
 
   Vue.prototype.$off = function (event, fn) {
-    var this$1 = this;
-
     var vm = this;
     // all
     if (!arguments.length) {
@@ -2357,7 +2355,7 @@ function eventsMixin (Vue) {
     // array of events
     if (Array.isArray(event)) {
       for (var i = 0, l = event.length; i < l; i++) {
-        this$1.$off(event[i], fn);
+        this.$off(event[i], fn);
       }
       return vm
     }
@@ -2792,7 +2790,6 @@ function callHook (vm, hook) {
 
 /*  */
 
-
 var MAX_UPDATE_COUNT = 100;
 
 var queue = [];
@@ -2932,7 +2929,9 @@ function queueWatcher (watcher) {
 
 /*  */
 
-var uid$2 = 0;
+
+
+var uid$1 = 0;
 
 /**
  * A watcher parses an expression, collects dependencies,
@@ -2957,7 +2956,7 @@ var Watcher = function Watcher (
     this.deep = this.user = this.lazy = this.sync = false;
   }
   this.cb = cb;
-  this.id = ++uid$2; // uid for batching
+  this.id = ++uid$1; // uid for batching
   this.active = true;
   this.dirty = this.lazy; // for lazy watchers
   this.deps = [];
@@ -3032,13 +3031,11 @@ Watcher.prototype.addDep = function addDep (dep) {
  * Clean up for dependency collection.
  */
 Watcher.prototype.cleanupDeps = function cleanupDeps () {
-    var this$1 = this;
-
   var i = this.deps.length;
   while (i--) {
-    var dep = this$1.deps[i];
-    if (!this$1.newDepIds.has(dep.id)) {
-      dep.removeSub(this$1);
+    var dep = this.deps[i];
+    if (!this.newDepIds.has(dep.id)) {
+      dep.removeSub(this);
     }
   }
   var tmp = this.depIds;
@@ -3110,11 +3107,9 @@ Watcher.prototype.evaluate = function evaluate () {
  * Depend on all deps collected by this watcher.
  */
 Watcher.prototype.depend = function depend () {
-    var this$1 = this;
-
   var i = this.deps.length;
   while (i--) {
-    this$1.deps[i].depend();
+    this.deps[i].depend();
   }
 };
 
@@ -3122,8 +3117,6 @@ Watcher.prototype.depend = function depend () {
  * Remove self from all dependencies' subscriber list.
  */
 Watcher.prototype.teardown = function teardown () {
-    var this$1 = this;
-
   if (this.active) {
     // remove self from vm's watcher list
     // this is a somewhat expensive operation so we skip it
@@ -3133,7 +3126,7 @@ Watcher.prototype.teardown = function teardown () {
     }
     var i = this.deps.length;
     while (i--) {
-      this$1.deps[i].removeSub(this$1);
+      this.deps[i].removeSub(this);
     }
     this.active = false;
   }
@@ -3230,7 +3223,7 @@ function initProps (vm, propsOptions) {
           vm
         );
       }
-      defineReactive(props, key, value, function () {
+      defineReactive$$1(props, key, value, function () {
         if (vm.$parent && !isUpdatingChildComponent) {
           warn(
             "Avoid mutating a prop directly since the value will be " +
@@ -3242,7 +3235,7 @@ function initProps (vm, propsOptions) {
         }
       });
     } else {
-      defineReactive(props, key, value);
+      defineReactive$$1(props, key, value);
     }
     // static props are already proxied on the component's prototype
     // during Vue.extend(). We only need to proxy props defined at
@@ -3519,7 +3512,7 @@ function initInjections (vm) {
     Object.keys(result).forEach(function (key) {
       /* istanbul ignore else */
       if (process.env.NODE_ENV !== 'production') {
-        defineReactive(vm, key, result[key], function () {
+        defineReactive$$1(vm, key, result[key], function () {
           warn(
             "Avoid mutating an injected value directly since the changes will be " +
             "overwritten whenever the provided component re-renders. " +
@@ -3528,7 +3521,7 @@ function initInjections (vm) {
           );
         });
       } else {
-        defineReactive(vm, key, result[key]);
+        defineReactive$$1(vm, key, result[key]);
       }
     });
     observerState.shouldConvert = true;
@@ -4151,7 +4144,8 @@ function mergeHook$1 (one, two) {
 // prop and event handler respectively.
 function transformModel (options, data) {
   var prop = (options.model && options.model.prop) || 'value';
-  var event = (options.model && options.model.event) || 'input';(data.props || (data.props = {}))[prop] = data.model.value;
+  var event = (options.model && options.model.event) || 'input'
+  ;(data.props || (data.props = {}))[prop] = data.model.value;
   var on = data.on || (data.on = {});
   if (isDef(on[event])) {
     on[event] = [data.model.callback].concat(on[event]);
@@ -4307,15 +4301,15 @@ function initRender (vm) {
 
   /* istanbul ignore else */
   if (process.env.NODE_ENV !== 'production') {
-    defineReactive(vm, '$attrs', parentData && parentData.attrs || emptyObject, function () {
+    defineReactive$$1(vm, '$attrs', parentData && parentData.attrs || emptyObject, function () {
       !isUpdatingChildComponent && warn("$attrs is readonly.", vm);
     }, true);
-    defineReactive(vm, '$listeners', options._parentListeners || emptyObject, function () {
+    defineReactive$$1(vm, '$listeners', options._parentListeners || emptyObject, function () {
       !isUpdatingChildComponent && warn("$listeners is readonly.", vm);
     }, true);
   } else {
-    defineReactive(vm, '$attrs', parentData && parentData.attrs || emptyObject, null, true);
-    defineReactive(vm, '$listeners', options._parentListeners || emptyObject, null, true);
+    defineReactive$$1(vm, '$attrs', parentData && parentData.attrs || emptyObject, null, true);
+    defineReactive$$1(vm, '$listeners', options._parentListeners || emptyObject, null, true);
   }
 }
 
@@ -4392,13 +4386,13 @@ function renderMixin (Vue) {
 
 /*  */
 
-var uid = 0;
+var uid$2 = 0;
 
 function initMixin (Vue) {
   Vue.prototype._init = function (options) {
     var vm = this;
     // a uid
-    vm._uid = uid++;
+    vm._uid = uid$2++;
 
     var startTag, endTag;
     /* istanbul ignore if */
@@ -4527,20 +4521,20 @@ function dedupe (latest, extended, sealed) {
   }
 }
 
-function Vue$3 (options) {
+function Vue (options) {
   if (process.env.NODE_ENV !== 'production' &&
-    !(this instanceof Vue$3)
+    !(this instanceof Vue)
   ) {
     warn('Vue is a constructor and should be called with the `new` keyword');
   }
   this._init(options);
 }
 
-initMixin(Vue$3);
-stateMixin(Vue$3);
-eventsMixin(Vue$3);
-lifecycleMixin(Vue$3);
-renderMixin(Vue$3);
+initMixin(Vue);
+stateMixin(Vue);
+eventsMixin(Vue);
+lifecycleMixin(Vue);
+renderMixin(Vue);
 
 /*  */
 
@@ -4710,6 +4704,8 @@ function initAssetRegisters (Vue) {
 
 /*  */
 
+
+
 function getComponentName (opts) {
   return opts && (opts.Ctor.options.name || opts.tag)
 }
@@ -4773,10 +4769,8 @@ var KeepAlive = {
   },
 
   destroyed: function destroyed () {
-    var this$1 = this;
-
-    for (var key in this$1.cache) {
-      pruneCacheEntry(this$1.cache, key, this$1.keys);
+    for (var key in this.cache) {
+      pruneCacheEntry(this.cache, key, this.keys);
     }
   },
 
@@ -4856,7 +4850,7 @@ function initGlobalAPI (Vue) {
     warn: warn,
     extend: extend,
     mergeOptions: mergeOptions,
-    defineReactive: defineReactive
+    defineReactive: defineReactive$$1
   };
 
   Vue.set = set;
@@ -4880,20 +4874,20 @@ function initGlobalAPI (Vue) {
   initAssetRegisters(Vue);
 }
 
-initGlobalAPI(Vue$3);
+initGlobalAPI(Vue);
 
-Object.defineProperty(Vue$3.prototype, '$isServer', {
+Object.defineProperty(Vue.prototype, '$isServer', {
   get: isServerRendering
 });
 
-Object.defineProperty(Vue$3.prototype, '$ssrContext', {
+Object.defineProperty(Vue.prototype, '$ssrContext', {
   get: function get () {
     /* istanbul ignore next */
     return this.$vnode && this.$vnode.ssrContext
   }
 });
 
-Vue$3.version = '2.5.0';
+Vue.version = '2.5.0';
 
 /*  */
 
@@ -5048,8 +5042,6 @@ var isSVG = makeMap(
   true
 );
 
-
-
 var isReservedTag = function (tag) {
   return isHTMLTag(tag) || isSVG(tag)
 };
@@ -5171,20 +5163,19 @@ function setAttribute (node, key, val) {
   node.setAttribute(key, val);
 }
 
-
-var nodeOps = Object.freeze({
-	createElement: createElement$1,
-	createElementNS: createElementNS,
-	createTextNode: createTextNode,
-	createComment: createComment,
-	insertBefore: insertBefore,
-	removeChild: removeChild,
-	appendChild: appendChild,
-	parentNode: parentNode,
-	nextSibling: nextSibling,
-	tagName: tagName,
-	setTextContent: setTextContent,
-	setAttribute: setAttribute
+var nodeOps = /*#__PURE__*/Object.freeze({
+  createElement: createElement$1,
+  createElementNS: createElementNS,
+  createTextNode: createTextNode,
+  createComment: createComment,
+  insertBefore: insertBefore,
+  removeChild: removeChild,
+  appendChild: appendChild,
+  parentNode: parentNode,
+  nextSibling: nextSibling,
+  tagName: tagName,
+  setTextContent: setTextContent,
+  setAttribute: setAttribute
 });
 
 /*  */
@@ -5303,13 +5294,13 @@ function createPatchFunction (backend) {
   }
 
   function createRmCb (childElm, listeners) {
-    function remove () {
-      if (--remove.listeners === 0) {
+    function remove$$1 () {
+      if (--remove$$1.listeners === 0) {
         removeNode(childElm);
       }
     }
-    remove.listeners = listeners;
-    return remove
+    remove$$1.listeners = listeners;
+    return remove$$1
   }
 
   function removeNode (el) {
@@ -6170,35 +6161,7 @@ var klass = {
 
 /*  */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// note: this only removes the attr from the Array (attrsList) so that it
-// doesn't get processed by processAttrs.
-// By default it does NOT remove it from the map (attrsMap) because the map is
-// needed during codegen.
-
 /*  */
-
-/**
- * Cross-platform code generation for component v-model
- */
-
-
-/**
- * Cross-platform codegen helper for generating v-model value assignment code.
- */
 
 /*  */
 
@@ -6587,20 +6550,20 @@ function removeClass (el, cls) {
 
 /*  */
 
-function resolveTransition (def) {
-  if (!def) {
+function resolveTransition (def$$1) {
+  if (!def$$1) {
     return
   }
   /* istanbul ignore else */
-  if (typeof def === 'object') {
+  if (typeof def$$1 === 'object') {
     var res = {};
-    if (def.css !== false) {
-      extend(res, autoCssTransition(def.name || 'v'));
+    if (def$$1.css !== false) {
+      extend(res, autoCssTransition(def$$1.name || 'v'));
     }
-    extend(res, def);
+    extend(res, def$$1);
     return res
-  } else if (typeof def === 'string') {
-    return autoCssTransition(def)
+  } else if (typeof def$$1 === 'string') {
+    return autoCssTransition(def$$1)
   }
 }
 
@@ -7302,9 +7265,6 @@ var platformDirectives = {
 
 /*  */
 
-// Provides transition support for a single element/component.
-// supports transition mode (out-in / in-out)
-
 var transitionProps = {
   name: String,
   appear: Boolean,
@@ -7489,17 +7449,6 @@ var Transition = {
 
 /*  */
 
-// Provides transition support for list items.
-// supports move transitions using the FLIP technique.
-
-// Because the vdom's children update algorithm is "unstable" - i.e.
-// it doesn't guarantee the relative positioning of removed elements,
-// we force transition-group to update its children into two passes:
-// in the first pass, we remove all nodes that need to be removed,
-// triggering their leaving transition; in the second pass, we insert/move
-// into the final desired state. This way in the second pass removed
-// nodes will remain where they should be.
-
 var props = extend({
   tag: String,
   moveClass: String
@@ -7578,6 +7527,9 @@ var TransitionGroup = {
     children.forEach(applyTranslation);
 
     // force reflow to put everything in position
+    var body = document.body;
+    var f = body.offsetHeight; // eslint-disable-line
+
     children.forEach(function (c) {
       if (c.data.moved) {
         var el = c.elm;
@@ -7660,21 +7612,21 @@ var platformComponents = {
 /*  */
 
 // install platform specific utils
-Vue$3.config.mustUseProp = mustUseProp;
-Vue$3.config.isReservedTag = isReservedTag;
-Vue$3.config.isReservedAttr = isReservedAttr;
-Vue$3.config.getTagNamespace = getTagNamespace;
-Vue$3.config.isUnknownElement = isUnknownElement;
+Vue.config.mustUseProp = mustUseProp;
+Vue.config.isReservedTag = isReservedTag;
+Vue.config.isReservedAttr = isReservedAttr;
+Vue.config.getTagNamespace = getTagNamespace;
+Vue.config.isUnknownElement = isUnknownElement;
 
 // install platform runtime directives & components
-extend(Vue$3.options.directives, platformDirectives);
-extend(Vue$3.options.components, platformComponents);
+extend(Vue.options.directives, platformDirectives);
+extend(Vue.options.components, platformComponents);
 
 // install platform patch function
-Vue$3.prototype.__patch__ = inBrowser ? patch : noop;
+Vue.prototype.__patch__ = inBrowser ? patch : noop;
 
 // public mount method
-Vue$3.prototype.$mount = function (
+Vue.prototype.$mount = function (
   el,
   hydrating
 ) {
@@ -7684,10 +7636,10 @@ Vue$3.prototype.$mount = function (
 
 // devtools global hook
 /* istanbul ignore next */
-Vue$3.nextTick(function () {
+Vue.nextTick(function () {
   if (config.devtools) {
     if (devtools) {
-      devtools.emit('init', Vue$3);
+      devtools.emit('init', Vue);
     } else if (process.env.NODE_ENV !== 'production' && isChrome) {
       console[console.info ? 'info' : 'log'](
         'Download the Vue Devtools extension for a better development experience:\n' +
@@ -7709,4 +7661,4 @@ Vue$3.nextTick(function () {
 
 /*  */
 
-module.exports = Vue$3;
+module.exports = Vue;
