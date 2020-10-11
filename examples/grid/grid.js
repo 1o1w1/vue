@@ -1,7 +1,32 @@
+/* eslint-disable */
+const tempComSub = {
+  props:["data"],
+  name: 'temp-com-sub',
+  template: '#temp-com-sub',
+  replace: true,
+  beforeUpdate(){
+  }
+}
+
+const tempCom = {
+  props:["data"],
+  name: 'temp-com',
+  template: '#temp-com',
+  components: {
+    'temp-com-sub':tempComSub
+  },
+  replace: true,
+  beforeUpdate(){
+  }
+}
+
 // register the grid component
 Vue.component('demo-grid', {
   template: '#grid-template',
   replace: true,
+  components:{
+    'temp-com':tempCom
+  },
   props: {
     data: Array,
     columns: Array,
@@ -16,6 +41,8 @@ Vue.component('demo-grid', {
       sortKey: '',
       sortOrders: sortOrders
     }
+  },
+  beforeUpdate(){
   },
   computed: {
     filteredData: function () {
@@ -52,6 +79,10 @@ Vue.component('demo-grid', {
     }
   }
 })
+
+
+
+
 
 // bootstrap the demo
 var demo = new Vue({

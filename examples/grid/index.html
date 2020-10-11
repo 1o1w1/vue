@@ -11,6 +11,9 @@
 
     <!-- component template -->
     <script type="text/x-template" id="grid-template">
+      <div>
+      <temp-com  :data="sortKey" >
+      </temp-com>
       <table v-if="filteredData.length">
         <thead>
           <tr>
@@ -32,8 +35,25 @@
         </tbody>
       </table>
       <p v-else>No matches found.</p>
+    </div>
     </script>
 
+     <!-- component template -->
+     <script type="text/x-template" id="temp-com">
+      <div mark="temp-com"  >
+        <h1>
+          temp:{{data}}
+        </h1>
+        <temp-com-sub :data="data"/>
+      </div>
+     
+    </script>
+    <!-- component template -->
+    <script type="text/x-template" id="temp-com-sub">
+      <h1>
+        tempSub:{{data}}
+      </h1>
+    </script>
     <!-- demo root element -->
     <div id="demo">
       <form id="search">
